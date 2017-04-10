@@ -1,5 +1,6 @@
 import os
 import requests
+import subprocess
 
 from SyncEntity import SyncEntity
 
@@ -43,12 +44,12 @@ class GitlabHelper:
         if 'path_with_namespace' not in project or 'ssh_url_to_repo' not in project:
             raise Exception("Invalid project.")
 
-        repo = project['ssh_url_to_repo']
+        repo = project['ssh_url_to_repo'].strip()
         project_path = os.path.split(project['path_with_namespace'])
         path_list = ['.']
         path_list.extend(project_path[:-1])
-        path = os.path.join(*path_list)
-        folder = project_path[-1:][0]
+        path = os.path.join(*path_list).strip()
+        folder = project_path[-1:][0].strip()
         return SyncEntity(path, folder, repo)
 
     @staticmethod
@@ -57,3 +58,25 @@ class GitlabHelper:
         for p in projects:
             entities.append(GitlabHelper.projectToSyncEntity(p))
         return entities
+
+    @staticmethod
+    def getEndpoint():
+        try:
+            return subprocess.check_output("git config gitlab-sync.endpoint", shell=True).strip()
+        except Exception:
+            return None
+
+    @staticmethod
+    def getKey():
+        try:
+            return subprocess.check_output("git config gitlab-sync.private-token", shell=True).strip()
+        except Exception:
+            return None
+
+    @staticmethod
+    def gitAvailable():
+        try:
+            subprocess.check_output("git --version")
+            return True
+        except Exception:
+            return False
